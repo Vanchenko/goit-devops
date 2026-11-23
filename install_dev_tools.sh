@@ -55,9 +55,12 @@ apt_update_once() {
     fi
 }
 
+# Встановлює пакети без "рекомендованих" залежностей (компіляторів тощо)
+# і без довгого виводу dpkg — помилки все одно потрапляють у stderr.
 apt_install() {
     apt_update_once
-    ${SUDO} env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq "$@"
+    ${SUDO} env DEBIAN_FRONTEND=noninteractive NEEDRESTART_SUSPEND=1 \
+        apt-get install -y -qq --no-install-recommends "$@" >/dev/null
 }
 
 # ---------- Перевірка ОС ----------
@@ -111,7 +114,7 @@ install_docker() {
         return 0
     fi
 
-    info "Встановлюю Docker..."
+    info "Встановлюю Docker (це може зайняти кілька хвилин)..."
     add_docker_repo
     apt_install docker-ce docker-ce-cli containerd.io docker-buildx-plugin
 
@@ -189,7 +192,7 @@ install_django() {
     fi
 
     info "Встановлюю Django через pip..."
-    local pip_args=(install --user --quiet django)
+    local pip_args=(install --user --quiet --no-warn-script-location django)
 
     # Ubuntu 23.04+ / Debian 12+ (PEP 668) забороняють pip-встановлення
     # у системний Python без цього прапорця.
@@ -203,10 +206,11 @@ install_django() {
 
     python3 -m pip "${pip_args[@]}"
 
-    # pip --user кладе django-admin у ~/.local/bin — підказуємо додати в PATH.
+    # pip --user кладе django-admin у ~/.local/bin. На Ubuntu / Debian ~/.profile
+    # додає цю теку в PATH автоматично, але лише під час наступного входу.
     if [[ ":${PATH}:" != *":${HOME}/.local/bin:"* ]]; then
-        info "Додайте ~/.local/bin у PATH, щоб використовувати django-admin:"
-        info "  echo 'export PATH=\"\$HOME/.local/bin:\$PATH\"' >> ~/.bashrc && source ~/.bashrc"
+        info "Команда django-admin стане доступна після повторного входу в систему"
+        info "(або одразу: export PATH=\"\$HOME/.local/bin:\$PATH\")."
     fi
 
     success "Django встановлено: $(python3 -m django --version)"
