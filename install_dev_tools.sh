@@ -46,21 +46,52 @@ else
     SUDO="sudo"
 fi
 
+readonly LOG_FILE="/tmp/install_dev_tools.log"
+
+# Виконує команду, записуючи її вивід у LOG_FILE, а на екран виводить
+# крапку кожні 2 секунди — видно, що процес живий.
+# Якщо команда завершилась з помилкою — показує кінець логу і зупиняє скрипт.
+run_logged() {
+    # Пароль sudo запитуємо заздалегідь: фоновий процес не може його ввести.
+    if [[ -n "${SUDO}" ]]; then
+        ${SUDO} -v
+    fi
+
+    echo "===== $(date '+%F %T') $* =====" >>"${LOG_FILE}"
+    "$@" >>"${LOG_FILE}" 2>&1 &
+    local pid=$!
+
+    printf '       '
+    while kill -0 "${pid}" 2>/dev/null; do
+        printf '.'
+        sleep 2
+    done
+    printf '\n'
+
+    if ! wait "${pid}"; then
+        error "Команда завершилась з помилкою: $*"
+        error "Останні рядки логу ${LOG_FILE}:"
+        tail -n 20 "${LOG_FILE}" >&2
+        exit 1
+    fi
+}
+
 APT_UPDATED=false
 apt_update_once() {
     if [[ "${APT_UPDATED}" == false ]]; then
         info "Оновлюю список пакетів (apt-get update)..."
-        ${SUDO} apt-get update -qq
+        run_logged ${SUDO} apt-get update
         APT_UPDATED=true
     fi
 }
 
-# Встановлює пакети без "рекомендованих" залежностей (компіляторів тощо)
-# і без довгого виводу dpkg — помилки все одно потрапляють у stderr.
+# Встановлює пакети без "рекомендованих" залежностей (компіляторів тощо).
+# Детальний вивід apt пишеться в LOG_FILE.
 apt_install() {
     apt_update_once
-    ${SUDO} env DEBIAN_FRONTEND=noninteractive NEEDRESTART_SUSPEND=1 \
-        apt-get install -y -qq --no-install-recommends "$@" >/dev/null
+    info "apt-get install $* (лог: ${LOG_FILE})"
+    run_logged ${SUDO} env DEBIAN_FRONTEND=noninteractive NEEDRESTART_SUSPEND=1 \
+        apt-get install -y --no-install-recommends "$@"
 }
 
 # ---------- Перевірка ОС ----------
