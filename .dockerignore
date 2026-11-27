@@ -1,0 +1,13 @@
+.git
+.gitignore
+.gitattributes
+.env
+.env.example
+**/__pycache__
+*.py[cod]
+db.sqlite3
+.venv
+venv
+nginx
+docker-compose.yml
+README.md
