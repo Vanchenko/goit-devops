@@ -86,7 +86,10 @@ lesson-5/
 ## Передумови
 
 - Terraform ≥ 1.5 і AWS CLI v2;
-- налаштовані облікові дані AWS (`aws configure`) з правами на S3, DynamoDB, EC2/VPC та ECR;
+- налаштовані облікові дані AWS (`aws configure`, регіон `us-west-2`);
+- IAM-користувачу призначені політики: `AmazonS3FullAccess`, `AmazonDynamoDBFullAccess`,
+  `AmazonEC2FullAccess` (VPC, Elastic IP, NAT Gateway) та `AmazonEC2ContainerRegistryFullAccess`.
+  Перевірка: `aws sts get-caller-identity`;
 - ім'я бакета в `main.tf` і `backend.tf` має бути унікальним в усьому AWS — за потреби змініть його в обох файлах.
 
 ## Запуск
