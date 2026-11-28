@@ -1,0 +1,18 @@
+# Локальні дані Terraform: провайдери, плагіни, модулі
+.terraform/
+
+# Стейти та їх резервні копії ніколи не комітимо — вони живуть у S3
+*.tfstate
+*.tfstate.*
+
+# Файли змінних можуть містити секрети
+*.tfvars
+*.tfvars.json
+
+# Плани та crash-логи
+*.tfplan
+crash.log
+crash.*.log
+
+# Тимчасово вимкнений бекенд (див. README.md)
+backend.tf.disabled
